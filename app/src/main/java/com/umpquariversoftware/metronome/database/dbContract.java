@@ -17,6 +17,7 @@ public class dbContract {
 
     public static final Uri CONTENT_AUTHORITY = Uri.parse("content://com.umpquariversoftware.metronome");
 
+
     public static Uri buildComponentUri(){
         return CONTENT_AUTHORITY.buildUpon().appendPath(ComponentTable.TABLE_NAME).build();
     }
@@ -33,6 +34,11 @@ public class dbContract {
     /**
      * This section defines the tables in the database, and each table's associated columns.
      */
+    private static final String     VARCHAR_255         = " VARCHAR(255), ";
+
+    public static final int DATABASE_VERSION = 1;
+    public static final String DATABASE_NAME = "database";
+
 
     public static final class ComponentTable implements BaseColumns {
         public static final String TABLE_NAME = "components";
@@ -40,6 +46,15 @@ public class dbContract {
         public static final String NAME = "name";
         public static final String RESOURCE = "resource";
         public static final String HEXID = "hexid";
+
+        public static final String CREATE_TABLE               =
+                "CREATE TABLE "            +
+                        TABLE_NAME                 + "(" +
+                        _ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        NAME + VARCHAR_255 +
+                        RESOURCE + VARCHAR_255 +
+                        HEXID + VARCHAR_255 +
+                        "UNIQUE ("+ _ID +") ON CONFLICT IGNORE);";
     }
 
     public static final class KitTable implements BaseColumns {

@@ -4,10 +4,13 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
 public class contentProvider extends ContentProvider {
+    DatabaseManager databaseManager;
+
     public contentProvider() {
     }
 
@@ -46,32 +49,34 @@ public class contentProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-
+        final SQLiteDatabase db = databaseManager.getWritableDatabase();
+        long _id = 0;
         switch (uri.getPathSegments().get(0)){
             case dbContract.ComponentTable.TABLE_NAME:{
                 // insert to component table
-                Log.e("contentProvider","Matched component URI via case/switch");
+                _id = db.insert(dbContract.ComponentTable.TABLE_NAME, null, values);
             }
             case dbContract.KitTable.TABLE_NAME:{
                 // insert to kit table
-                Log.e("contentProvider","Matched kit URI via case/switch");
+                _id = db.insert(dbContract.KitTable.TABLE_NAME, null, values);
             }
             case dbContract.PatternTable.TABLE_NAME:{
                 // insert to pattern table
-                Log.e("contentProvider","Matched pattern URI via case/switch");
+                _id = db.insert(dbContract.PatternTable.TABLE_NAME, null, values);
             }
             case dbContract.JamTable.TABLE_NAME:{
                 // insert to jam table
-                Log.e("contentProvider","Matched jam URI via case/switch");
+                _id = db.insert(dbContract.JamTable.TABLE_NAME, null, values);
             }
         }
         Log.e("contentProvider", "insert() sees these contentValues: " + values.toString());
-        return null;
+        return Uri.withAppendedPath(uri, String.valueOf(_id));
     }
 
     @Override
     public boolean onCreate() {
         Log.e("contentProvider","onCreate called");
+        databaseManager = new DatabaseManager(getContext());
         return false;
     }
 
