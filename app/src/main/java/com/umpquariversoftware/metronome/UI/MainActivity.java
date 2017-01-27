@@ -1,9 +1,11 @@
 package com.umpquariversoftware.metronome.UI;
 
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,6 +20,7 @@ import com.jjoe64.graphview.helper.StaticLabelsFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.PointsGraphSeries;
 import com.umpquariversoftware.metronome.R;
+import com.umpquariversoftware.metronome.database.dbContract;
 import com.umpquariversoftware.metronome.elements.Beat;
 import com.umpquariversoftware.metronome.elements.Component;
 import com.umpquariversoftware.metronome.elements.Jam;
@@ -60,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         setupFavoriteFab();
 
         rawResourceDbBuilder();
-
+        // cpTest();
     }
 
     public void setupStartStopFAB(){
@@ -435,28 +438,119 @@ public class MainActivity extends AppCompatActivity {
         int Tempo = jam.getTempo();
     }
 
-
     private void rawResourceDbBuilder(){
-        ArrayList<Integer> components = new ArrayList<>();
-        components.add(R.raw.bass);
-        components.add(R.raw.button1);
-        components.add(R.raw.button3);
-        components.add(R.raw.default_crash);
-        components.add(R.raw.default_highhat);
-        components.add(R.raw.default_kick);
-        components.add(R.raw.default_ride);
-        components.add(R.raw.default_snare);
-        components.add(R.raw.default_tom1);
-        components.add(R.raw.default_tom2);
-        components.add(R.raw.default_tom3);
-        components.add(R.raw.hihat);
-        components.add(R.raw.snare);
-        components.add(R.raw.tom);
+        ContentValues contentValues;
+        ArrayList<ContentValues> components = new ArrayList<>();
 
-        Log.e("rawResourceDbBuilder()", "components.toString()" + components.toString());
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Bass");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.bass);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Button1");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.button1);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Button3");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.button3);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Crash");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_crash);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default HiHat");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_highhat);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Kick");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_kick);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Ride");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_ride);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Snare");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_snare);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Tom1");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom1);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Tom2");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom2);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Tom3");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom3);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default HiHat");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.hihat);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Snare");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.snare);
+        components.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.ComponentTable.NAME, "Default Tom");
+        contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.tom);
+        components.add(contentValues);
+
         for(int x=0;x<components.size();++x){
-            Log.e("rawResourceDbBuilder()", "x: " + String.format("%02X", x) + " : " + components.get(x));
+            components.get(x).put(dbContract.ComponentTable.HEXID, String.format("%02X", x));
+            getContentResolver().insert(dbContract.buildComponentUri(), components.get(x));
         }
     }
+
+    private void cpTest(){
+        Uri testUri = dbContract.buildComponentUri();
+
+        for(int x=0;x<4;x++){
+            if(x==0){
+                testUri = dbContract.buildComponentUri();
+            }
+            if(x==1) {
+                testUri = dbContract.buildKitUri();
+            }
+            if(x==2) {
+                testUri = dbContract.buildPatternUri();
+            }
+            if(x==3){
+                testUri = dbContract.buildJamUri();
+            }
+
+            this.getContentResolver().query(testUri,
+                    null,
+                    null,
+                    null,
+                    null);
+
+            this.getContentResolver().delete(testUri, null, null);
+
+            this.getContentResolver().getType(testUri);
+
+            this.getContentResolver().insert(testUri, null);
+
+            this.getContentResolver().update(testUri, null, null, null);
+        }
+    }
+
+
 
 }
