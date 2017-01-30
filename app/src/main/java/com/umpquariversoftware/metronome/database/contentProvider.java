@@ -14,7 +14,6 @@ public class contentProvider extends ContentProvider {
     public contentProvider() {
     }
 
-
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
 
@@ -54,22 +53,29 @@ public class contentProvider extends ContentProvider {
         switch (uri.getPathSegments().get(0)){
             case dbContract.ComponentTable.TABLE_NAME:{
                 // insert to component table
+                Log.e("insert()","matched Component");
                 _id = db.insert(dbContract.ComponentTable.TABLE_NAME, null, values);
+                break;
             }
             case dbContract.KitTable.TABLE_NAME:{
                 // insert to kit table
+                Log.e("insert()","matched Kit");
                 _id = db.insert(dbContract.KitTable.TABLE_NAME, null, values);
+                break;
             }
             case dbContract.PatternTable.TABLE_NAME:{
                 // insert to pattern table
+                Log.e("insert()","matched Pattern");
                 _id = db.insert(dbContract.PatternTable.TABLE_NAME, null, values);
+                break;
             }
             case dbContract.JamTable.TABLE_NAME:{
                 // insert to jam table
+                Log.e("insert()","matched Jam");
                 _id = db.insert(dbContract.JamTable.TABLE_NAME, null, values);
+                break;
             }
         }
-        Log.e("contentProvider", "insert() sees these contentValues: " + values.toString());
         return Uri.withAppendedPath(uri, String.valueOf(_id));
     }
 
@@ -84,27 +90,73 @@ public class contentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
 
+        Cursor retCursor = null;
+
         switch (uri.getPathSegments().get(0)){
             case dbContract.ComponentTable.TABLE_NAME:{
                 // query component table
-                Log.e("contentProvider","Matched component URI via case/switch");
+                Log.e("contentProvider", "Matched component URI via case/switch");
+                Log.e("contentProvider", uri.getPathSegments().get(1));
+                retCursor = databaseManager.getReadableDatabase().query(
+                        dbContract.ComponentTable.TABLE_NAME,
+                        projection,
+                        dbContract.ComponentTable.HEXID + " = ?",
+                        new String[]{uri.getPathSegments().get(1)},
+                        null,
+                        null,
+                        null
+                );
+                break;
             }
             case dbContract.KitTable.TABLE_NAME:{
                 // query kit table
                 Log.e("contentProvider","Matched kit URI via case/switch");
+                Log.e("contentProvider", uri.getPathSegments().get(1));
+                retCursor = databaseManager.getReadableDatabase().query(
+                        dbContract.KitTable.TABLE_NAME,
+                        projection,
+                        dbContract.KitTable.ID + " = ?",
+                        new String[]{uri.getPathSegments().get(1)},
+                        null,
+                        null,
+                        null
+                );
+                break;
             }
             case dbContract.PatternTable.TABLE_NAME:{
                 // query pattern table
                 Log.e("contentProvider","Matched pattern URI via case/switch");
+                Log.e("contentProvider", uri.getPathSegments().get(1));
+                retCursor = databaseManager.getReadableDatabase().query(
+                        dbContract.PatternTable.TABLE_NAME,
+                        projection,
+                        dbContract.PatternTable.ID + " = ?",
+                        new String[]{uri.getPathSegments().get(1)},
+                        null,
+                        null,
+                        null
+                );
+                break;
             }
             case dbContract.JamTable.TABLE_NAME:{
                 // query jam table
                 Log.e("contentProvider","Matched jam URI via case/switch");
+                Log.e("contentProvider", uri.getPathSegments().get(1));
+                retCursor = databaseManager.getReadableDatabase().query(
+                        dbContract.JamTable.TABLE_NAME,
+                        projection,
+                        dbContract.JamTable.ID + " = ?",
+                        new String[]{uri.getPathSegments().get(1)},
+                        null,
+                        null,
+                        null
+                );
+                break;
             }
         }
 
         Log.e("contentProvider","query() called with uri: " + uri.toString());
-        return null;
+        return retCursor;
     }
 
     @Override

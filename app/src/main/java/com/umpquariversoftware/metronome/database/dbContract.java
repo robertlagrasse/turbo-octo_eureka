@@ -3,6 +3,7 @@ package com.umpquariversoftware.metronome.database;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import com.umpquariversoftware.metronome.elements.Component;
 import com.umpquariversoftware.metronome.elements.Pattern;
 
 /**
@@ -50,7 +51,7 @@ public class dbContract {
         public static final String CREATE_TABLE               =
                 "CREATE TABLE "            +
                         TABLE_NAME                 + "(" +
-                        _ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         NAME + VARCHAR_255 +
                         RESOURCE + VARCHAR_255 +
                         HEXID + VARCHAR_255 +
@@ -61,17 +62,48 @@ public class dbContract {
         public static final String TABLE_NAME = "kit";
         public static final String ID = "_id";
         public static final String NAME = "name";
+        public static final String COMPONENTS = "components";
+
+        public static final String CREATE_TABLE               =
+                "CREATE TABLE "            +
+                        TABLE_NAME                 + "(" +
+                        ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        NAME + VARCHAR_255 +
+                        COMPONENTS + VARCHAR_255 +
+                        "UNIQUE ("+ _ID +") ON CONFLICT IGNORE);";
     }
 
     public static final class PatternTable implements BaseColumns {
         public static final String TABLE_NAME = "pattern";
         public static final String ID = "_id";
         public static final String NAME = "name";
+        public static final String SEQUENCE = "sequence";
+
+        public static final String CREATE_TABLE               =
+                "CREATE TABLE "            +
+                        TABLE_NAME                 + "(" +
+                        ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        NAME + VARCHAR_255 +
+                        SEQUENCE + VARCHAR_255 +
+                        "UNIQUE ("+ _ID +") ON CONFLICT IGNORE);";
     }
 
     public static final class JamTable implements BaseColumns {
         public static final String TABLE_NAME = "jam";
         public static final String ID = "_id";
         public static final String NAME = "name";
+        public static final String KIT_ID = "kit_id";
+        public static final String PATTERN_ID = "pattern_id";
+        public static final String TEMPO = "tempo";
+
+        public static final String CREATE_TABLE               =
+                "CREATE TABLE "            +
+                        TABLE_NAME                 + "(" +
+                        ID                 + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        NAME + VARCHAR_255 +
+                        KIT_ID + VARCHAR_255 +
+                        PATTERN_ID + VARCHAR_255 +
+                        TEMPO + VARCHAR_255 +
+                        "UNIQUE ("+ _ID +") ON CONFLICT IGNORE);";
     }
 }

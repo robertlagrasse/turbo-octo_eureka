@@ -22,6 +22,9 @@ public class DatabaseManager extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         Log.e(TAG, "onCreate Called");
         db.execSQL(dbContract.ComponentTable.CREATE_TABLE);
+        db.execSQL(dbContract.KitTable.CREATE_TABLE);
+        db.execSQL(dbContract.PatternTable.CREATE_TABLE);
+        db.execSQL(dbContract.JamTable.CREATE_TABLE);
     }
 
     @Override
@@ -29,7 +32,9 @@ public class DatabaseManager extends SQLiteOpenHelper {
         Log.e(TAG, "New Database Created. Version: " + newVersion);
         // delete the existing database
         db.execSQL("DROP TABLE IF EXISTS " + dbContract.ComponentTable.TABLE_NAME);
-
+        db.execSQL("DROP TABLE IF EXISTS " + dbContract.KitTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + dbContract.PatternTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + dbContract.JamTable.TABLE_NAME);
         // call onCreate
         onCreate(db);
     }

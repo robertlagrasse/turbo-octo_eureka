@@ -1,5 +1,7 @@
 package com.umpquariversoftware.metronome.elements;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
 /**
@@ -25,6 +27,21 @@ public class Beat {
     public Beat() {
         Arrays.fill(this.beat, Boolean.FALSE);
         this.beat[FIRST] = true;
+    }
+
+    public Beat(String signature){
+        int value = Integer.parseInt(signature, 16);
+        String binval = Integer.toBinaryString(value);
+        char[] key = binval.toCharArray();
+
+        Arrays.fill(this.beat, Boolean.FALSE);
+        for (int i = 0; i < key.length; i++) {
+            if(key[i] == '1') {
+                this.beat[key.length-1 - i] = true;
+            } else {
+                this.beat[key.length-1 - i] = false;
+            }
+        }
     }
 
     @Override

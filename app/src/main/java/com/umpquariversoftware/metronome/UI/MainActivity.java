@@ -3,6 +3,7 @@ package com.umpquariversoftware.metronome.UI;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.net.Uri;
@@ -27,17 +28,47 @@ import com.umpquariversoftware.metronome.elements.Jam;
 import com.umpquariversoftware.metronome.elements.Kit;
 import com.umpquariversoftware.metronome.elements.Pattern;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/** OVERVIEW
+ *
+ * The user interface for metronome allows the user to build their own Jam.
+ * A Jam consists of three parts - all user selectable on the main screen
+ *
+ * Tempo (Set by seekbar)
+ * Kit (Selected via recyclerview)
+ * Pattern (Selected via recyclerview)
+ *
+ * Kits consist of 8 components. A component is a sound.
+ * A pattern is a sequence of beats. A beat is an array of 8 boolean values. These boolean values
+ * will correlate with the components in each kit.
+ *
+ * For every tick of the timer, the app will cycle through the pattern. The beat in the pattern
+ * will determine which components sound on that tick.
+ *
+ * I chose the data structures here very specifically. Beats consist of 8 binary values, which
+ * correspond to the 8 components in a kit. Any beat can be represented as a two digit hex value.
+ * These values can the chained together to create patterns of arbitrary length, with the complete
+ * information for any beat only taking up a single byte in the database. This facilitates both
+ * efficient DB storage, and easy sharing between users.
+ *
+ * Component values have associated 2 Digit Hexidecimal values in the database HEXID
+ * All components will be supplied with the software. No user supplied sounds will be allowed.
+ * Essentially, this allows me to employ the same identification and sharing technique.
+ *
+ * Users can pass all of the information necessary to share their Jam in the space of a tweet.
+ *
+ */
+
+
 public class MainActivity extends AppCompatActivity {
     String TAG = "COUNTER";
     Timer mTimer = new Timer();
     Jam mJam = new Jam();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,8 +76,35 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mTimer = null;
 
-        // Load the last one - use default if it doesn't exist
-        mJam = buildTestJam();
+        // TODO: Setup what happens on the first run vs how things go down from then on
+        if(savedInstanceState == null){
+        } else {
+
+        }
+        /**
+         *  Setup the basic database components. This only happens the first time
+         */
+
+        createComponentsTable();
+        createKitTable();
+        createPatternTable();
+        createJamTable();
+        // TODO: Put something in the database pointing to jam #1 as the last jam so there's something to start with
+
+        /**
+         * Lookup the last jam in the database
+         */
+
+        // TODO: This just just loading an arbitrary value. DB or savedInstanceState solution here.
+        mJam = buildJamFromDB(4);
+
+        /**
+         *
+         * Populate the UI
+         *
+         * TODO: This is all of the recyclerview stuff I have to figure out and build.
+         *
+         */
 
         // Display Information about the current Kit
         showKit(mJam.getKit());
@@ -61,9 +119,6 @@ public class MainActivity extends AppCompatActivity {
         setupStartStopFAB();
         setupSaveFab();
         setupFavoriteFab();
-
-        rawResourceDbBuilder();
-        // cpTest();
     }
 
     public void setupStartStopFAB(){
@@ -253,36 +308,8 @@ public class MainActivity extends AppCompatActivity {
         pattern.addBeat(beat8);
         pattern.setName("Default Pattern");
 
-        // Instantiate Components
-        Component componentOne = new Component(R.raw.default_kick);
-        Component componentTwo = new Component(R.raw.default_snare);
-        Component componentThree = new Component(R.raw.default_crash);
-        Component componentFour = new Component(R.raw.default_ride);
-        Component componentFive = new Component(R.raw.default_highhat);
-        Component componentSix = new Component(R.raw.default_tom1);
-        Component componentSeven = new Component(R.raw.default_tom2);
-        Component componentEight = new Component(R.raw.default_tom3);
-
-        componentOne.setName("Default Kick");
-        componentTwo.setName("Default Snare");
-        componentThree.setName("Default Crash");
-        componentFour.setName("Default Ride");
-        componentFive.setName("Default High Hat");
-        componentSix.setName("Default Tom 1");
-        componentSeven.setName("Default Tom 2");
-        componentEight.setName("Default Tom 3");
-
-        // Instantiate Kit, add instruments
-        Kit kit = new Kit();
-        kit.addComponent(componentOne);
-        kit.addComponent(componentTwo);
-        kit.addComponent(componentThree);
-        kit.addComponent(componentFour);
-        kit.addComponent(componentFive);
-        kit.addComponent(componentSix);
-        kit.addComponent(componentSeven);
-        kit.addComponent(componentEight);
-        kit.setName("Default Kit");
+        // Build components and assemble kit from signature
+        Kit kit = new Kit("slick kit name", "05040609080A060C", this);
 
         // Instantiate Jam - Add Pattern, Kit, Tempo
         Jam jam = new Jam();
@@ -406,115 +433,195 @@ public class MainActivity extends AppCompatActivity {
         graph.addSeries(series);
     }
 
-    private void patternToDB (Pattern pattern){
-        // Extract Information
-        String name = pattern.getName();
-        int length = pattern.getLength();
-        String signature = pattern.getPatternHexSignature();
-
-        // Make Content Provider call
-    }
-
-    private void kitToDB (Kit kit){
-        String name = kit.getName();
-        int component1 = kit.getComponents().get(0).getResource();
-        int component2 = kit.getComponents().get(1).getResource();
-        int component3 = kit.getComponents().get(2).getResource();
-        int component4 = kit.getComponents().get(3).getResource();
-        int component5 = kit.getComponents().get(4).getResource();
-        int component6 = kit.getComponents().get(5).getResource();
-        int component7 = kit.getComponents().get(6).getResource();
-        int component8 = kit.getComponents().get(7).getResource();
-
-        String signature = kit.getSignature();
-
-        // Make Content Provider call
-    }
-
-    private void jamToDB (Jam jam){
-        String name = jam.getName();
-        String kitSignature = jam.getKit().getSignature();
-        String pattern = jam.getPattern().getPatternHexSignature();
-        int Tempo = jam.getTempo();
-    }
-
-    private void rawResourceDbBuilder(){
+    private void createComponentsTable(){
         ContentValues contentValues;
         ArrayList<ContentValues> components = new ArrayList<>();
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Bass");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.bass);
+        contentValues.put(dbContract.ComponentTable.HEXID, "00");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Button1");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.button1);
+        contentValues.put(dbContract.ComponentTable.HEXID, "01");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Button3");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.button3);
+        contentValues.put(dbContract.ComponentTable.HEXID, "02");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Crash");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_crash);
+        contentValues.put(dbContract.ComponentTable.HEXID, "03");
+
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default HiHat");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_highhat);
+        contentValues.put(dbContract.ComponentTable.HEXID, "04");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Kick");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_kick);
+        contentValues.put(dbContract.ComponentTable.HEXID, "05");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Ride");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_ride);
+        contentValues.put(dbContract.ComponentTable.HEXID, "06");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Snare");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_snare);
+        contentValues.put(dbContract.ComponentTable.HEXID, "07");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Tom1");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom1);
+        contentValues.put(dbContract.ComponentTable.HEXID, "08");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Tom2");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom2);
+        contentValues.put(dbContract.ComponentTable.HEXID, "09");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Tom3");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.default_tom3);
+        contentValues.put(dbContract.ComponentTable.HEXID, "0A");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default HiHat");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.hihat);
+        contentValues.put(dbContract.ComponentTable.HEXID, "0B");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Snare");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.snare);
+        contentValues.put(dbContract.ComponentTable.HEXID, "0C");
         components.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(dbContract.ComponentTable.NAME, "Default Tom");
         contentValues.put(dbContract.ComponentTable.RESOURCE, R.raw.tom);
+        contentValues.put(dbContract.ComponentTable.HEXID, "0D");
         components.add(contentValues);
 
-        for(int x=0;x<components.size();++x){
-            components.get(x).put(dbContract.ComponentTable.HEXID, String.format("%02X", x));
+        for(int x=0;x<components.size();x++){
             getContentResolver().insert(dbContract.buildComponentUri(), components.get(x));
+        }
+
+    }
+
+    private void createKitTable(){
+        ArrayList<ContentValues> kits = new ArrayList<>();
+        ContentValues contentValues;
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.KitTable.NAME, "Default Kit");
+        contentValues.put(dbContract.KitTable.COMPONENTS, "0102030405060708");
+        kits.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.KitTable.NAME, "Another Kit");
+        contentValues.put(dbContract.KitTable.COMPONENTS, "0C0A0B040508090A");
+        kits.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.KitTable.NAME, "A New Kit");
+        contentValues.put(dbContract.KitTable.COMPONENTS, "05040609080A060C");
+        kits.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.KitTable.NAME, "Unique Kit Kit");
+        contentValues.put(dbContract.KitTable.COMPONENTS, "04080A0C06090703");
+        kits.add(contentValues);
+
+        for(int x=0;x<kits.size();x++){
+            Uri i = getContentResolver().insert(dbContract.buildKitUri(), kits.get(x));
+            Log.e("CreateKitTable", "insert() Returned URI:" + i.toString());
+        }
+    }
+
+    private void createPatternTable(){
+        ArrayList<ContentValues> patterns = new ArrayList<>();
+        ContentValues contentValues;
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.PatternTable.NAME, "Default Pattern");
+        contentValues.put(dbContract.PatternTable.SEQUENCE, "01");
+        patterns.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.PatternTable.NAME, "2 Beat");
+        contentValues.put(dbContract.PatternTable.SEQUENCE, "0102");
+        patterns.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.PatternTable.NAME, "4 Beat");
+        contentValues.put(dbContract.PatternTable.SEQUENCE, "01010201");
+        patterns.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.PatternTable.NAME, "3 Beat");
+        contentValues.put(dbContract.PatternTable.SEQUENCE, "010103");
+        patterns.add(contentValues);
+
+        for(int x=0;x<patterns.size();x++){
+            Uri i = getContentResolver().insert(dbContract.buildPatternUri(), patterns.get(x));
+            Log.e("CreatePatternTable", "insert() Returned URI:" + i.toString());
+        }
+    }
+
+    private void createJamTable(){
+        ArrayList<ContentValues> jams = new ArrayList<>();
+        ContentValues contentValues;
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.JamTable.NAME, "Default Jam");
+        contentValues.put(dbContract.JamTable.KIT_ID, "2");
+        contentValues.put(dbContract.JamTable.PATTERN_ID, "2");
+        contentValues.put(dbContract.JamTable.TEMPO, "60");
+        jams.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.JamTable.NAME, "Jam Two");
+        contentValues.put(dbContract.JamTable.KIT_ID, "2");
+        contentValues.put(dbContract.JamTable.PATTERN_ID, "2");
+        contentValues.put(dbContract.JamTable.TEMPO, "90");
+        jams.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.JamTable.NAME, "Jam 3");
+        contentValues.put(dbContract.JamTable.KIT_ID, "3");
+        contentValues.put(dbContract.JamTable.PATTERN_ID, "2");
+        contentValues.put(dbContract.JamTable.TEMPO, "120");
+        jams.add(contentValues);
+
+        contentValues = new ContentValues();
+        contentValues.put(dbContract.JamTable.NAME, "Jam 4");
+        contentValues.put(dbContract.JamTable.KIT_ID, "3");
+        contentValues.put(dbContract.JamTable.PATTERN_ID, "3");
+        contentValues.put(dbContract.JamTable.TEMPO, "180");
+        jams.add(contentValues);
+
+        for(int x=0;x<jams.size();x++){
+            Uri i = getContentResolver().insert(dbContract.buildJamUri(), jams.get(x));
         }
     }
 
@@ -551,6 +658,103 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private Jam buildJamFromDB(int id){
+
+        /**
+         * A Jam has to have the following parts:
+         *
+         * Name
+         * Tempo
+         * Kit
+         * Pattern
+         *
+         * We'll pull the Name and Tempo from the DB directly, along with references
+         * to the Kit and the Pattern info, then build the kit and the pattern from there.
+         *
+         */
+
+
+        // For now, just grab the first Jam. I'll build a way to track the last jam
+        // and pick that one specifically.
+
+        Cursor retCursor = getContentResolver().query(dbContract.buildJamUri().buildUpon().appendPath(String.valueOf(id)).build(),
+                null,
+                null,
+                null,
+                null);
+        retCursor.moveToFirst();
+
+        String jamName = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.NAME));
+        int jamTempo = Integer.parseInt(retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.TEMPO)));
+
+        String kitID = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.KIT_ID));
+        String patternID = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.PATTERN_ID));
+
+        retCursor.close();
+
+        /**
+         *
+         * Now we'll build the pattern. We'll use the pattern ID to get the pattern sequence
+         * from the database, then use that sequence to create the beats.
+         *
+         * A pattern is a name and an array list of beats.
+         *
+         * The Pattern class has a constructor that will build a pattern directly from a
+         * signature. It leverages a Beat constructor that creates a beat from an individual
+         * Hex value.
+         *
+         */
+
+        retCursor = getContentResolver().query(dbContract.buildPatternUri().buildUpon().appendPath(patternID).build(),
+                null,
+                null,
+                null,
+                null);
+        retCursor.moveToFirst();
+
+        String patternName = retCursor.getString(retCursor.getColumnIndex(dbContract.PatternTable.NAME));
+        String patternSequence = retCursor.getString(retCursor.getColumnIndex(dbContract.PatternTable.SEQUENCE));
+
+        Pattern pattern = new Pattern(patternName, patternSequence, this);
+
+
+        /**
+         *
+         * Next we build the Kit. A kit is a name and an array list of components.
+         *
+         * We'll use the KitID to get the Kit sequence from the DB.
+         *
+         * The Kit class has a constructor that will build a kit directly from a signature.
+         *
+         */
+
+        retCursor = getContentResolver().query(dbContract.buildKitUri().buildUpon().appendPath(kitID).build(),
+                null,
+                null,
+                null,
+                null);
+        retCursor.moveToFirst();
+
+        String kitComponents = retCursor.getString(retCursor.getColumnIndex(dbContract.KitTable.COMPONENTS));
+        String kitName = retCursor.getString(retCursor.getColumnIndex(dbContract.KitTable.NAME));
+        retCursor.close();
+
+        Kit kit = new Kit(kitName, kitComponents, this);
+        kit.setName(kitName);
+
+        /**
+         * Finally, we bring all of the pieces together and create the jam.
+         */
+
+        Jam jam = new Jam();
+
+        jam.setName(jamName);
+        jam.setTempo(jamTempo);
+        jam.setKit(kit);
+        jam.setPattern(pattern);
+
+        return jam;
+    }
 
 
 }

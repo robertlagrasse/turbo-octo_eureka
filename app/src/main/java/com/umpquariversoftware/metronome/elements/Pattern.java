@@ -4,10 +4,13 @@ package com.umpquariversoftware.metronome.elements;
  * Created by robert on 1/26/17.
  */
 
+import android.content.Context;
+import android.database.Cursor;
 import android.util.Log;
 
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.PointsGraphSeries;
+import com.umpquariversoftware.metronome.database.dbContract;
 
 import java.util.ArrayList;
 
@@ -19,6 +22,20 @@ public class Pattern {
         this.name = "New Pattern";
         this.beats = new ArrayList<>();
         this.beats.clear();
+    }
+
+    public Pattern(String name, String signature, Context context) {
+        beats = new ArrayList<>();
+        beats.clear();
+
+        this.name = name;
+
+        char[] sig = signature.toCharArray();
+        for(int x=0;x<signature.length();x+=2){
+            String pick = new StringBuilder().append(sig[x]).append(sig[x+1]).toString();
+            Beat beat = new Beat(pick);
+            beats.add(beat);
+        }
     }
 
     @Override
