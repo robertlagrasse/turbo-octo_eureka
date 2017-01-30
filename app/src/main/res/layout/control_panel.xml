@@ -21,6 +21,7 @@
                 android:scaleType="centerInside"
                 android:orientation="horizontal"
                 android:layout_height="0dp" >
+                <!--
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
@@ -47,6 +48,7 @@
                         android:id="@+id/favoriteJamButton"
                         android:layout_gravity="center"/>
                 </FrameLayout>
+                -->
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
@@ -59,7 +61,8 @@
                         app:fabSize="mini"
                         app:srcCompat="@android:drawable/ic_media_play"
                         android:id="@+id/startStopButton"
-                        android:layout_gravity="center"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="16dp"
                         />
                 </FrameLayout>
             </LinearLayout>

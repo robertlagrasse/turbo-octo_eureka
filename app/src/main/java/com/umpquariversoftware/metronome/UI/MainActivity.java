@@ -75,28 +75,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mTimer = null;
+        int lastLoadedJamID;
 
-        // TODO: Setup what happens on the first run vs how things go down from then on
         if(savedInstanceState == null){
+            /**
+             *  If this is the first time the app's been run, we'll need to do some
+             *  basic setup. The database tables will be created and populated,
+             *  and the default Jam will be selected.
+             */
+            createComponentsTable();
+            createKitTable();
+            createPatternTable();
+            createJamTable();
+            lastLoadedJamID = 1;
         } else {
-
+            /**
+             * We've been here before. Load the last jam we worked with
+             */
+            lastLoadedJamID = savedInstanceState.getInt(String.valueOf(R.string.jamID));
         }
-        /**
-         *  Setup the basic database components. This only happens the first time
-         */
 
-        createComponentsTable();
-        createKitTable();
-        createPatternTable();
-        createJamTable();
-        // TODO: Put something in the database pointing to jam #1 as the last jam so there's something to start with
-
-        /**
-         * Lookup the last jam in the database
-         */
-
-        // TODO: This just just loading an arbitrary value. DB or savedInstanceState solution here.
-        mJam = buildJamFromDB(4);
+        mJam = buildJamFromDB(lastLoadedJamID);
 
         /**
          *
@@ -117,8 +116,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup user controls
         setupStartStopFAB();
-        setupSaveFab();
-        setupFavoriteFab();
+        // setupSaveFab();
+        // setupFavoriteFab();
     }
 
     public void setupStartStopFAB(){
@@ -135,6 +134,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+/**
     public void setupSaveFab(){
         FloatingActionButton saveButton = new FloatingActionButton(this);
         saveButton = (FloatingActionButton) findViewById(R.id.saveJamButton);
@@ -146,7 +146,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+*/
 
+/**
     public void setupFavoriteFab(){
         FloatingActionButton favoriteButton = new FloatingActionButton(this);
         favoriteButton = (FloatingActionButton) findViewById(R.id.favoriteJamButton);
@@ -156,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+*/
 
     public void setupTempoBar(){
         int tempo = mJam.getTempo();
@@ -625,39 +628,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void cpTest(){
-        Uri testUri = dbContract.buildComponentUri();
-
-        for(int x=0;x<4;x++){
-            if(x==0){
-                testUri = dbContract.buildComponentUri();
-            }
-            if(x==1) {
-                testUri = dbContract.buildKitUri();
-            }
-            if(x==2) {
-                testUri = dbContract.buildPatternUri();
-            }
-            if(x==3){
-                testUri = dbContract.buildJamUri();
-            }
-
-            this.getContentResolver().query(testUri,
-                    null,
-                    null,
-                    null,
-                    null);
-
-            this.getContentResolver().delete(testUri, null, null);
-
-            this.getContentResolver().getType(testUri);
-
-            this.getContentResolver().insert(testUri, null);
-
-            this.getContentResolver().update(testUri, null, null, null);
-        }
-    }
-
     private Jam buildJamFromDB(int id){
 
         /**
@@ -686,6 +656,7 @@ public class MainActivity extends AppCompatActivity {
 
         String jamName = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.NAME));
         int jamTempo = Integer.parseInt(retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.TEMPO)));
+        int dbID = Integer.parseInt(retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.ID)));
 
         String kitID = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.KIT_ID));
         String patternID = retCursor.getString(retCursor.getColumnIndex(dbContract.JamTable.PATTERN_ID));
@@ -752,9 +723,14 @@ public class MainActivity extends AppCompatActivity {
         jam.setTempo(jamTempo);
         jam.setKit(kit);
         jam.setPattern(pattern);
+        jam.setDbID(dbID);
 
         return jam;
     }
 
+    protected void onSaveInstanceState(Bundle outState){
+        super.onSaveInstanceState(outState);
+        outState.putInt(String.valueOf(R.string.jamID), mJam.getDbID());
+    }
 
 }
