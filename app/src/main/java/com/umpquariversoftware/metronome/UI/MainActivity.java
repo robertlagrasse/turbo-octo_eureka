@@ -1,8 +1,11 @@
 package com.umpquariversoftware.metronome.UI;
 
 
+import android.app.LoaderManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.SoundPool;
@@ -10,11 +13,12 @@ import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.helper.StaticLabelsFormatter;
@@ -64,10 +68,22 @@ import java.util.TimerTask;
  */
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     String TAG = "COUNTER";
     Timer mTimer = new Timer();
     Jam mJam = new Jam();
+    patternCursorAdapter mPatternCursorAdapter;
+    Cursor mPatternCursor;
+
+    kitCursorAdapter mKitCursorAdapter;
+    Cursor mKitCursor;
+
+    jamCursorAdapter mJamCursorAdapter;
+    Cursor mJamCursor;
+
+    private static final int PATTERN_LOADER_ID = 0;
+    private static final int KIT_LOADER_ID = 1;
+    private static final int JAM_LOADER_ID = 2;
 
 
     @Override
@@ -101,23 +117,19 @@ public class MainActivity extends AppCompatActivity {
          *
          * Populate the UI
          *
-         * TODO: This is all of the recyclerview stuff I have to figure out and build.
-         *
          */
 
-        // Display Information about the current Kit
-        showKit(mJam.getKit());
+        // TODO: Fix recyclerViews so they snap to position.
+        // TODO: Track last position of RVs as a member level variable. Write to outstate bundle
+        // TODO: and restore
 
-        // Display a graph of the current pattern
-        graphPattern(mJam.getPattern());
+        setupTempoChooser();
+        setupPatternChooser();
+        setupKitChooser();
+        setupJamChooser();
 
-        // setup Tempo Bar
-        setupTempoBar();
+        // TODO: Attach FAB to recyclerview, rather than making part of the card.
 
-        // Setup user controls
-        setupStartStopFAB();
-        // setupSaveFab();
-        // setupFavoriteFab();
     }
 
     public void setupStartStopFAB(){
@@ -160,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
     }
 */
 
-    public void setupTempoBar(){
+    public void setupTempoChooser(){
         int tempo = mJam.getTempo();
         SeekBar tempoBar = (SeekBar) findViewById(R.id.tempoBar);
         tempoBar.setProgress(tempo-30);
@@ -181,6 +193,72 @@ public class MainActivity extends AppCompatActivity {
                 mTimer = tempoTimerStart();
             }
         });
+    }
+
+    public void setupPatternChooser(){
+        getLoaderManager().initLoader(PATTERN_LOADER_ID, null, this);
+
+        RecyclerView patternRecyclerView = (RecyclerView) findViewById(R.id.patternRecyclerView);
+        patternRecyclerView.setHasFixedSize(true);
+        LinearLayoutManager patternLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        patternRecyclerView.setLayoutManager(patternLinearLayoutManager);
+
+        mPatternCursorAdapter = new patternCursorAdapter(this, null);
+        patternRecyclerView.setAdapter(mPatternCursorAdapter);
+
+        patternRecyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
+                new RecyclerViewItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View v, int position) {
+                        mPatternCursor.moveToPosition(position);
+                        Log.e("recyclerview", "click!");
+                        // read info, do stuff.
+                    }
+                }));
+    }
+
+    public void setupKitChooser(){
+        getLoaderManager().initLoader(JAM_LOADER_ID, null, this);
+
+        RecyclerView jamRecyclerView = (RecyclerView) findViewById(R.id.jamRecyclerView);
+        jamRecyclerView.setHasFixedSize(true);
+        LinearLayoutManager jamLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        jamRecyclerView.setLayoutManager(jamLinearLayoutManager);
+
+        mJamCursorAdapter = new jamCursorAdapter(this, null);
+        jamRecyclerView.setAdapter(mJamCursorAdapter);
+
+        jamRecyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
+                new RecyclerViewItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View v, int position) {
+                        mJamCursor.moveToPosition(position);
+                        Log.e("recyclerview", "click!");
+                        // read info, do stuff.
+                    }
+                }));
+    }
+
+    public void setupJamChooser(){
+        getLoaderManager().initLoader(KIT_LOADER_ID, null, this);
+
+        RecyclerView kitRecyclerView = (RecyclerView) findViewById(R.id.kitRecyclerView);
+        kitRecyclerView.setHasFixedSize(true);
+        LinearLayoutManager kitLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        kitRecyclerView.setLayoutManager(kitLinearLayoutManager);
+
+        mKitCursorAdapter = new kitCursorAdapter(this, null);
+        kitRecyclerView.setAdapter(mKitCursorAdapter);
+
+        kitRecyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
+                new RecyclerViewItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View v, int position) {
+                        mKitCursor.moveToPosition(position);
+                        Log.e("recyclerview", "click!");
+                        // read info, do stuff.
+                    }
+                }));
     }
 
     public Timer tempoTimerStart(){
@@ -222,6 +300,55 @@ public class MainActivity extends AppCompatActivity {
         mTimer.cancel();
         mTimer.purge();
         mTimer = null;
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        Log.e("onCreateLoader", "int i = " + i);
+        switch (i) {
+            case PATTERN_LOADER_ID:
+                return new CursorLoader(this, dbContract.buildPatternUri(),
+                        null,
+                        null,
+                        null,
+                        null);
+            case KIT_LOADER_ID:
+                return new CursorLoader(this, dbContract.buildKitUri(),
+                        null,
+                        null,
+                        null,
+                        null);
+            case JAM_LOADER_ID:
+                return new CursorLoader(this, dbContract.buildJamUri(),
+                        null,
+                        null,
+                        null,
+                        null);
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        switch(loader.getId()) {
+            case PATTERN_LOADER_ID:
+                mPatternCursorAdapter.swapCursor(data);
+                mPatternCursor = data;
+                break;
+            case KIT_LOADER_ID:
+                mKitCursorAdapter.swapCursor(data);
+                mKitCursor = data;
+                break;
+            case JAM_LOADER_ID:
+                mJamCursorAdapter.swapCursor(data);
+                mJamCursor = data;
+                break;
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 
     public class SoundPoolPlayer {

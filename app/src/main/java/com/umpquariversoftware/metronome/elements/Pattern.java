@@ -111,39 +111,29 @@ public class Pattern {
         for(int x=0;x<getLength();++x){
             if(getBeat(x).getFirst()){
                 series.appendData(new DataPoint(x+1,1),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",1)");
             }
             if(getBeat(x).getSecond()){
                 series.appendData(new DataPoint(x+1,2),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",2)");
             }
             if(getBeat(x).getThird()){
                 series.appendData(new DataPoint(x+1,3),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",3)");
             }
             if(getBeat(x).getFourth()){
                 series.appendData(new DataPoint(x+1,4),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",4)");
             }
             if(getBeat(x).getFifth()){
                 series.appendData(new DataPoint(x+1,5),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",5)");
             }
             if(getBeat(x).getSixth()){
                 series.appendData(new DataPoint(x+1,6),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",6)");
             }
             if(getBeat(x).getSeventh()){
                 series.appendData(new DataPoint(x+1,7),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",7)");
             }
             if(getBeat(x).getEighth()){
                 series.appendData(new DataPoint(x+1,8),false,8192,false);
-                Log.e("LogJam", "Added Datapoint (" + x + ",8)");
             }
-
         }
-        Log.e("LogJam", "getPatternDataPoints series.toString():" + series.toString());
         return series;
     }
 

@@ -111,7 +111,18 @@ public class contentProvider extends ContentProvider {
             case dbContract.KitTable.TABLE_NAME:{
                 // query kit table
                 Log.e("contentProvider","Matched kit URI via case/switch");
-                Log.e("contentProvider", uri.getPathSegments().get(1));
+                if(uri.getLastPathSegment().equals(dbContract.KitTable.TABLE_NAME)){
+                    Log.e("contentProvider", "Requested all kits");
+                    retCursor = databaseManager.getReadableDatabase().query(
+                            dbContract.KitTable.TABLE_NAME,
+                            projection,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                    );
+                } else {
                 retCursor = databaseManager.getReadableDatabase().query(
                         dbContract.KitTable.TABLE_NAME,
                         projection,
@@ -121,28 +132,52 @@ public class contentProvider extends ContentProvider {
                         null,
                         null
                 );
+                }
                 break;
             }
             case dbContract.PatternTable.TABLE_NAME:{
                 // query pattern table
                 Log.e("contentProvider","Matched pattern URI via case/switch");
-                Log.e("contentProvider", uri.getPathSegments().get(1));
-                retCursor = databaseManager.getReadableDatabase().query(
-                        dbContract.PatternTable.TABLE_NAME,
-                        projection,
-                        dbContract.PatternTable.ID + " = ?",
-                        new String[]{uri.getPathSegments().get(1)},
-                        null,
-                        null,
-                        null
-                );
+                if(uri.getLastPathSegment().equals(dbContract.PatternTable.TABLE_NAME)){
+                    Log.e("contentProvider", "Requested all patterns");
+                    retCursor = databaseManager.getReadableDatabase().query(
+                            dbContract.PatternTable.TABLE_NAME,
+                            projection,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                    );                } else {
+                    Log.e("contentProvider", "Requested a single pattern");
+                    retCursor = databaseManager.getReadableDatabase().query(
+                            dbContract.PatternTable.TABLE_NAME,
+                            projection,
+                            dbContract.PatternTable.ID + " = ?",
+                            new String[]{uri.getPathSegments().get(1)},
+                            null,
+                            null,
+                            null
+                    );
+                }
                 break;
             }
             case dbContract.JamTable.TABLE_NAME:{
                 // query jam table
                 Log.e("contentProvider","Matched jam URI via case/switch");
-                Log.e("contentProvider", uri.getPathSegments().get(1));
-                retCursor = databaseManager.getReadableDatabase().query(
+                if(uri.getLastPathSegment().equals(dbContract.JamTable.TABLE_NAME)){
+                    retCursor = databaseManager.getReadableDatabase().query(
+                            dbContract.JamTable.TABLE_NAME,
+                            projection,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null
+                    );
+                } else {
+
+                    retCursor = databaseManager.getReadableDatabase().query(
                         dbContract.JamTable.TABLE_NAME,
                         projection,
                         dbContract.JamTable.ID + " = ?",
@@ -150,7 +185,7 @@ public class contentProvider extends ContentProvider {
                         null,
                         null,
                         null
-                );
+                );}
                 break;
             }
         }

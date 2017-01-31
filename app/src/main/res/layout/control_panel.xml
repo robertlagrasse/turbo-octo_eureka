@@ -67,7 +67,14 @@
                 </FrameLayout>
             </LinearLayout>
             <TextView
-                android:id="@+id/patternName"
+                android:id="@+id/jamName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:gravity="center_vertical"
+                android:text="@string/jam_name"/>
+            <TextView
+                android:id="@+id/jamTempo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
