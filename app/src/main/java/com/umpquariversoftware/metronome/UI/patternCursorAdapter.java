@@ -26,6 +26,7 @@ import com.umpquariversoftware.metronome.elements.Pattern;
 
 public class patternCursorAdapter extends CursorRecyclerViewAdapter<patternCursorAdapter.ViewHolder> {
     private static Context mContext;
+    public String mID;
 
     public patternCursorAdapter(Context context, Cursor cursor) {
         super(context, cursor);
@@ -45,6 +46,8 @@ public class patternCursorAdapter extends CursorRecyclerViewAdapter<patternCurso
     public void onBindViewHolder(patternCursorAdapter.ViewHolder viewHolder, Cursor cursor) {
         String name = cursor.getString(cursor.getColumnIndex(dbContract.PatternTable.NAME));
         String signature = cursor.getString(cursor.getColumnIndex(dbContract.PatternTable.SEQUENCE));
+        String id = cursor.getString(cursor.getColumnIndex(dbContract.PatternTable.ID));
+        mID = id;
         Pattern tempPattern = new Pattern("temp", signature, mContext);
         PointsGraphSeries<DataPoint> series = new PointsGraphSeries<>();
         series = tempPattern.getPatternDataPoints();

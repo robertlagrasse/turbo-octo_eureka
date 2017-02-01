@@ -39,7 +39,7 @@
         android:layout_height="0dp"
         android:layout_weight="4">
 
-        <android.support.v7.widget.RecyclerView
+        <com.umpquariversoftware.metronome.UI.SnappyRecyclerView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/patternRecyclerView"
@@ -53,7 +53,7 @@
         android:layout_height="0dp"
         android:layout_weight="2">
 
-        <android.support.v7.widget.RecyclerView
+        <com.umpquariversoftware.metronome.UI.SnappyRecyclerView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/kitRecyclerView"
@@ -66,10 +66,20 @@
         android:layout_height="0dp"
         android:layout_weight="2">
 
-        <android.support.v7.widget.RecyclerView
+        <com.umpquariversoftware.metronome.UI.SnappyRecyclerView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/jamRecyclerView"
+            />
+        <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            app:fabSize="normal"
+            app:srcCompat="@android:drawable/ic_media_play"
+            android:id="@+id/startStopButton"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
             />
     </FrameLayout>
 
@@ -80,6 +90,7 @@
         android:layout_weight="1"
         android:background="@color/colorAccent">
         <include layout="@layout/billboard"/>
+
     </FrameLayout>
 
 
