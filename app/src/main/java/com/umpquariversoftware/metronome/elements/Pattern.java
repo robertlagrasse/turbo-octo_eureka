@@ -40,13 +40,7 @@ public class Pattern {
 
     @Override
     public String toString() {
-
-        String pattern;
-
-        // iterate through arraylist.
-        // pattern.append(beat.toString())
-
-        return "Pattern";
+        return getPatternHexSignature();
     }
 
     public void addBeat(Beat beat){

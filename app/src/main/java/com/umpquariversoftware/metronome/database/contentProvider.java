@@ -116,11 +116,11 @@ public class contentProvider extends ContentProvider {
                     retCursor = databaseManager.getReadableDatabase().query(
                             dbContract.KitTable.TABLE_NAME,
                             projection,
+                            selection,
+                            selectionArgs,
                             null,
                             null,
-                            null,
-                            null,
-                            null
+                            sortOrder
                     );
                 } else {
                 retCursor = databaseManager.getReadableDatabase().query(
@@ -143,11 +143,11 @@ public class contentProvider extends ContentProvider {
                     retCursor = databaseManager.getReadableDatabase().query(
                             dbContract.PatternTable.TABLE_NAME,
                             projection,
+                            selection,
+                            selectionArgs,
                             null,
                             null,
-                            null,
-                            null,
-                            null
+                            sortOrder
                     );                } else {
                     Log.e("contentProvider", "Requested a single pattern");
                     retCursor = databaseManager.getReadableDatabase().query(
@@ -169,11 +169,11 @@ public class contentProvider extends ContentProvider {
                     retCursor = databaseManager.getReadableDatabase().query(
                             dbContract.JamTable.TABLE_NAME,
                             projection,
+                            selection,
+                            selectionArgs,
                             null,
                             null,
-                            null,
-                            null,
-                            null
+                            sortOrder
                     );
                 } else {
 

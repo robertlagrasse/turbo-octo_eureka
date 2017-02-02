@@ -11,7 +11,7 @@ import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.net.Uri;
-import android.os.PersistableBundle;
+import android.os.Build;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -78,9 +78,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     String TAG = "COUNTER";
     Timer mTimer = new Timer();
     Jam mJam = new Jam();
+    Boolean isRunning = false;
+
+    /**
+     *  Three cursor adapters and their associated loaders.
+     */
     patternCursorAdapter mPatternCursorAdapter;
     Cursor mPatternCursor;
-    Boolean isRunning = false;
 
     kitCursorAdapter mKitCursorAdapter;
     Cursor mKitCursor;
@@ -109,7 +113,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
              *  basic setup. The database tables will be created and populated,
              *  and the default Jam will be selected.
              */
-            Log.e("onCreate", "Saved instace state null. Setting up database");
             createComponentsTable();
             createKitTable();
             createPatternTable();
@@ -120,8 +123,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             /**
              * We've been here before. Load the last jam we worked with
              */
-            Log.e("onCreate", "Loading previous settings.");
-            lastLoadedJamID = prefs.getInt("jamID", 1);
+            lastLoadedJamID = prefs.getInt("jamID", 0);
         }
 
         mJam = buildJamFromDB(lastLoadedJamID);
@@ -132,16 +134,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
          * Populate the UI
          *
          */
-
-        // TODO: Track last position of RVs as a member level variable. Write to outstate bundle
-        // TODO: and restore
-
         setupTempoChooser();
         setupPatternChooser();
         setupKitChooser();
         setupJamChooser();
         setupStartStopFAB();
-
     }
 
     public void setupStartStopFAB(){
@@ -151,40 +148,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onClick(View v) {
                 if(isRunning){
                     tempoTimerStop();
-                    isRunning = false;
                 } else {
                     tempoTimerStart();
-                    isRunning = true;
                 }
             }
         });
     }
-
-/**
-    public void setupSaveFab(){
-        FloatingActionButton saveButton = new FloatingActionButton(this);
-        saveButton = (FloatingActionButton) findViewById(R.id.saveJamButton);
-        saveButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // Pattern Check
-                // Save if Unique
-                Toast.makeText(getApplicationContext(), "save", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-*/
-
-/**
-    public void setupFavoriteFab(){
-        FloatingActionButton favoriteButton = new FloatingActionButton(this);
-        favoriteButton = (FloatingActionButton) findViewById(R.id.favoriteJamButton);
-        favoriteButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "favorite", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-*/
 
     public void setupTempoChooser(){
         int tempo = mJam.getTempo();
@@ -202,9 +171,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Log.e("onStopTrackingTouch", "mJam.getTempo: " + mJam.getTempo());
+                if (isRunning){
                 tempoTimerStop();
                 tempoTimerStart();
+                }
             }
         });
     }
@@ -260,9 +230,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     public void setupJamChooser(){
+        /**
+         *  Setup UI and Loader
+         */
+
         getLoaderManager().initLoader(JAM_LOADER_ID, null, this);
 
-        SnappyRecyclerView jamRecyclerView = (SnappyRecyclerView) findViewById(R.id.jamRecyclerView);
+        final SnappyRecyclerView jamRecyclerView = (SnappyRecyclerView) findViewById(R.id.jamRecyclerView);
         jamRecyclerView.setHasFixedSize(true);
         LinearLayoutManager jamLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         jamRecyclerView.setLayoutManager(jamLinearLayoutManager);
@@ -273,6 +247,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mJamCursorAdapter = new jamCursorAdapter(this, null);
         jamRecyclerView.setAdapter(mJamCursorAdapter);
 
+        /**
+         *  Listen for Clicks
+         */
+
         jamRecyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
                 new RecyclerViewItemClickListener.OnItemClickListener() {
                     @Override
@@ -282,6 +260,78 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         // read info, do stuff.
                     }
                 }));
+
+        /**
+         * Listen for Scroll Events
+         */
+
+        jamRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if(jamRecyclerView.getFirstVisibleItemPosition() >=0){
+
+
+                    mJamCursor.moveToPosition(jamRecyclerView.getFirstVisibleItemPosition());
+                    long id = mJamCursorAdapter.getItemId(jamRecyclerView.getFirstVisibleItemPosition());
+                    mJam = buildJamFromDB(id);
+
+                    /**
+                     *  Identify the corresponding kit by searching for its signature in the DB
+                     *  Once located, move the recyclerview to that position
+                     */
+
+                    Cursor retCursor = getContentResolver().query(buildKitUri(),
+                            null,
+                            KitTable.COMPONENTS + " = ?",
+                            new String[]{mJam.getKit().getSignature()},
+                            null);
+                    retCursor.moveToFirst();
+
+                    int kitID = Integer.parseInt(retCursor.getString(retCursor.getColumnIndex(KitTable.ID)));
+
+                    for(int x=0;x<mKitCursorAdapter.getItemCount();++x){
+                        if (mKitCursorAdapter.getItemId(x) == kitID){
+                            id = x;
+                        }
+                    }
+
+                    SnappyRecyclerView kit = (SnappyRecyclerView) findViewById(R.id.kitRecyclerView);
+                    kit.scrollToPosition((int) id);
+
+                    /**
+                     * Identify the corresponding pattern by searching for its signature in the DB
+                     * Once located, move the recyclerview to that position.
+                     */
+
+                    retCursor = getContentResolver().query(buildPatternUri(),
+                            null,
+                            PatternTable.SEQUENCE + " = ?",
+                            new String[]{mJam.getPattern().getPatternHexSignature()},
+                            null);
+                    retCursor.moveToFirst();
+
+                    int patternID = Integer.parseInt(retCursor.getString(retCursor.getColumnIndex(PatternTable.ID)));
+
+                    for(int x=0;x<mPatternCursorAdapter.getItemCount();++x){
+                        if (mPatternCursorAdapter.getItemId(x) == patternID){
+                            id = x;
+                        }
+                    }
+                    SnappyRecyclerView pattern = (SnappyRecyclerView) findViewById(R.id.patternRecyclerView);
+                    pattern.scrollToPosition((int) id);
+
+                    /**
+                     * The Jam has been changed. Stop start the timer in response if it's running.
+                     */
+
+                    if(isRunning){
+                        tempoTimerStop();
+                        tempoTimerStart();
+                    }
+                }
+            }
+        });
 
     }
 
@@ -359,7 +409,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                               position = 0;
                                           }
                                           beat = mJam.getPattern().getBeat(position);
-
                                           // Iterate through each of the 8 components in the beat
                                           // Play it if marked true
                                           for(int x=0;x<8;++x){
@@ -367,7 +416,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                                   sound.playShortResource(mJam.getKit().getComponents().get(x).getResource());
                                               }
                                           }
-
                                           position++;
                                       }
 
@@ -376,12 +424,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 0,
                 //Set the amount of time between each execution (in milliseconds)
                 mJam.getInterval());
+        isRunning = true;
         return;
     }
 
     public void tempoTimerStop(){
-            mTimer.cancel();
-            mTimer.purge();
+        isRunning = false;
+        mTimer.cancel();
+        mTimer.purge();
     }
 
     @Override
@@ -437,24 +487,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         private SoundPool mShortPlayer= null;
         private HashMap mSounds = new HashMap();
 
-        public SoundPoolPlayer(Context pContext)
-        {
-            // setup Soundpool
-            this.mShortPlayer = new SoundPool(4, AudioManager.STREAM_MUSIC, 0);
-
-            mSounds.put(R.raw.bass, this.mShortPlayer.load(pContext, R.raw.bass,1));
-            mSounds.put(R.raw.hihat, this.mShortPlayer.load(pContext, R.raw.hihat,1));
-            mSounds.put(R.raw.snare, this.mShortPlayer.load(pContext, R.raw.snare,1));
-            mSounds.put(R.raw.tom, this.mShortPlayer.load(pContext, R.raw.tom,1));
-
-//            mSounds.put(R.raw.button1.wav, this.mShortPlayer.load(pContext, R.raw.button1.wav, 1));
-//            mSounds.put(R.raw.button3.wav, this.mShortPlayer.load(pContext, R.raw.button3.wav, 1));
-        }
 
         public SoundPoolPlayer(Context pContext, Kit kit)
         {
-            // setup Soundpool
-            this.mShortPlayer = new SoundPool(4, AudioManager.STREAM_MUSIC, 0);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                this.mShortPlayer = new SoundPool.Builder().build();
+            } else {
+                this.mShortPlayer = new SoundPool(4, AudioManager.STREAM_MUSIC, 0);
+                // Deprecated constructor.
+            }
 
             // Get components from kit
             ArrayList<Component> components = kit.getComponents();
@@ -806,8 +848,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         contentValues = new ContentValues();
         contentValues.put(JamTable.NAME, "Default Jam");
-        contentValues.put(JamTable.KIT_ID, "2");
-        contentValues.put(JamTable.PATTERN_ID, "2");
+        contentValues.put(JamTable.KIT_ID, "1");
+        contentValues.put(JamTable.PATTERN_ID, "1");
         contentValues.put(JamTable.TEMPO, "60");
         jams.add(contentValues);
 
@@ -821,14 +863,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         contentValues = new ContentValues();
         contentValues.put(JamTable.NAME, "Jam 3");
         contentValues.put(JamTable.KIT_ID, "3");
-        contentValues.put(JamTable.PATTERN_ID, "2");
+        contentValues.put(JamTable.PATTERN_ID, "3");
         contentValues.put(JamTable.TEMPO, "120");
         jams.add(contentValues);
 
         contentValues = new ContentValues();
         contentValues.put(JamTable.NAME, "Jam 4");
-        contentValues.put(JamTable.KIT_ID, "3");
-        contentValues.put(JamTable.PATTERN_ID, "3");
+        contentValues.put(JamTable.KIT_ID, "4");
+        contentValues.put(JamTable.PATTERN_ID, "4");
         contentValues.put(JamTable.TEMPO, "180");
         jams.add(contentValues);
 
@@ -837,7 +879,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    private Jam buildJamFromDB(int id){
+    private Jam buildJamFromDB(long id){
 
         /**
          * A Jam has to have the following parts:
