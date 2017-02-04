@@ -139,6 +139,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setupKitChooser();
         setupJamChooser();
         setupStartStopFAB();
+
+        /**
+         * Fire off a notification, just to test the functionality
+         */
+        // OK, this works. No need to keep executing it.
+        // utils.sendNotification(this);
     }
 
     public void setupStartStopFAB(){
@@ -238,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         final SnappyRecyclerView jamRecyclerView = (SnappyRecyclerView) findViewById(R.id.jamRecyclerView);
         jamRecyclerView.setHasFixedSize(true);
-        LinearLayoutManager jamLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
+        final LinearLayoutManager jamLinearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         jamRecyclerView.setLayoutManager(jamLinearLayoutManager);
 
         SnapHelper snapHelper = new LinearSnapHelper();
@@ -270,7 +276,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if(jamRecyclerView.getFirstVisibleItemPosition() >=0){
-
 
                     mJamCursor.moveToPosition(jamRecyclerView.getFirstVisibleItemPosition());
                     long id = mJamCursorAdapter.getItemId(jamRecyclerView.getFirstVisibleItemPosition());
